@@ -38,7 +38,7 @@ class Forma(ABC):
     def construct(self):
         pass
 
-    def drawLines(self):
+    def drawLines(self, resolution:int = 100):
         for edge in self.conn:
             self.linePoints.extend(drawLine(self.vtxs[edge[0]], self.vtxs[edge[1]]))
 
@@ -62,13 +62,27 @@ class Cube(Forma):
     def __init__(self):
         super().__init__()
 
-    def construct(self, side: float):
-        half = side/2
+    def construct(self, sideSize: float):
+        half = sideSize/2
         self.vtxs.extend([Ponto(-half, -half, -half), Ponto(half, -half, -half), Ponto(half, half, -half),Ponto(-half, half, -half),
                          Ponto(-half, -half, half), Ponto(half, -half, half), Ponto(half, half, half), Ponto(-half, half, half)])
 
         self.conn.extend([(0, 1), (1, 2), (2, 3), (3, 0), (4, 5), (5, 6), (6, 7), (7, 4),
                   (0, 4), (1, 5), (2,6), (3, 7)])
+
+class RegularTriangle(Forma):
+    def __init__(self):
+        super().__init__()
+
+    def construct(self, sideSize):
+        h = (sideSize*math.sqrt(3))/2
+        a = (sideSize*math.sqrt(3))/6
+        half = sideSize/2
+        self.vtxs.extend([Ponto(a, -half, -a), Ponto(a, half, -a), Ponto(a-h, 0, -a),
+                          Ponto(0, 0, h-a)])
+
+        self.conn.extend([(0, 1), (0, -1), (1, 2), (1, -1), (2, 0), (2, -1)])
+        
 
 def centralize(pontos: Ponto, width: int, height:int) -> Ponto:
     res = []
@@ -123,9 +137,9 @@ def main():
     screen = pygame.display.set_mode((WIDTH, HEIGHT))
 
     #inicialize the Cube
-    forma: Forma = Cube()
+    forma: Forma = RegularTriangle()
     forma.construct(300)
-    forma.drawLines()
+    forma.drawLines(resolution=500)
 
     #draw
     running = True
@@ -135,8 +149,10 @@ def main():
 
         drawForma(screen, forma)
         forma.rotateY(0.005)
+        forma.rotateZ(0.005)
+        forma.rotateX(0.005)
 
-        time.sleep(0.001)
+        time.sleep(0.0005)
         pygame.display.flip()
 
 
