@@ -150,11 +150,15 @@ void rotateY(Point *point, float teta){
     point->coord.z = ((point->coord.z*cos(teta) - point->coord.x*sin(teta)));
 }
 
-
-void clearScreen(int fd)
-{
-  const char *CLEAR_SCREEN_ANSI = "\e[1;1H\e[2J";
-  write(fd, CLEAR_SCREEN_ANSI, 11);
+void rotateZ(Point *point, float teta){
+    for(int i = 0; i < point->n; i++){
+        float currY = point->r_points[i].y;
+        float currX = point->r_points[i].x;
+        point->r_points[i].x = ((currX*cos(teta) - currY*sin(teta)));
+        point->r_points[i].y = ((currX*sin(teta) + currY*cos(teta)));
+    }
+    point->coord.x = ((point->coord.x*cos(teta) + point->coord.y*sin(teta)));
+    point->coord.y = ((point->coord.x*sin(teta) - point->coord.y*cos(teta)));
 }
 
 int main(){
@@ -198,7 +202,8 @@ int main(){
         for(int k = 0; k < 8; k++){
             // printf("entrou");
             rotateX(&points[k], 0.005);
-            rotateY(&points[k], 0.05);
+            rotateY(&points[k], 0.005);
+            rotateY(&points[k], 0.005);
         }
     }
 }

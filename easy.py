@@ -138,7 +138,7 @@ def main():
     screen = pygame.display.set_mode((WIDTH, HEIGHT))
 
     #inicialize the Cube
-    forma: Forma = Cube()
+    forma: Forma = RegularTriangle()
     forma.construct(300)
     forma.drawLines(resolution=500)
 
