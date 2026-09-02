@@ -14,26 +14,7 @@
 #define BLACK 0
 #define WHITE 0xFFFFFFFF
 
-#define RADIUS 3
 
-
-// struct v4l2_pix_format
-// {
-//     __u32 width;
-//     __u32 height;
-//     __u32 pixelformat;
-    
-//     enum vl
-// };
-
-
-// struct v4l2_framebuffer{
-//     __u32 capability;
-//     __u32 flags;
-//     void *base; //posição inicio do buffer (pixel superior esquerdo)
-    
-
-// }
 typedef struct coord{
     float x, y, z;
 }Coord;
