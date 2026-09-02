@@ -131,13 +131,14 @@ def drawForma(screen: pygame.Surface, forma: Forma, showVtx:bool = True, showEdg
         for ponto in forma.linePoints:
             pygame.draw.circle(screen, "red", (ponto.x + WIDTH//2, ponto.y + HEIGHT//2), (VTX_RADIUS*DIST)//(2*(ponto.z + 500 + DIST)))
 
+
 def main():
     #setup
     pygame.init()
     screen = pygame.display.set_mode((WIDTH, HEIGHT))
 
     #inicialize the Cube
-    forma: Forma = RegularTriangle()
+    forma: Forma = Cube()
     forma.construct(300)
     forma.drawLines(resolution=500)
 
@@ -148,9 +149,9 @@ def main():
 
 
         drawForma(screen, forma)
+        forma.rotateX(0.005)
         forma.rotateY(0.005)
         forma.rotateZ(0.005)
-        forma.rotateX(0.005)
 
         time.sleep(0.0005)
         pygame.display.flip()
