@@ -70,8 +70,10 @@ Point init_point(float x, float y, float z, int radius){
     point->coord = init_coord(x, y, z);
     
     int k = 0;
-    for(int i = x - radius; i < x + radius; i++){
-        for(int j = y - radius; j < y + radius; j++){
+    int x0 =(int)x;
+    int y0 =(int)y;
+    for(int i = x0 - radius; i < x0 + radius; i++){
+        for(int j = y0 - radius; j < y0 + radius; j++){
             point->r_points[k] = init_coord(i, j, z);
             k++;
         }
@@ -200,15 +202,16 @@ Shape initCube(float sideSize){
     return cube;
 }
 
-Shape drawLines(Shape *shape, int resolution){
+void drawLines(Shape *shape, int resolution){
     for(int i = 0; i < shape->nConn; i++){
         float t = 0;
-        float step = 1/resolution;
+        float step = 1.0/resolution;
         Point a = shape->vtxs[shape->conn[i].s];
         Point b = shape->vtxs[shape->conn[i].d];
 
         while (t < 1){
             addPoint(shape, a.coord.x + t*(b.coord.x - a.coord.x), a.coord.y + t*(b.coord.y - a.coord.y), a.coord.z + t*(b.coord.z - a.coord.z),RADIUS);
+            t += step;
         }
 
     }
@@ -216,9 +219,9 @@ Shape drawLines(Shape *shape, int resolution){
           
 void shapeRotate(Shape* shape, float tetaX, float tetaY, float tetaZ){
     for(int k = 0; k < shape->nPoints; k++){
-            rotateX(&shape->vtxs[k], tetaX);
-            rotateY(&shape->vtxs[k], tetaY);
-            rotateY(&shape->vtxs[k], tetaZ);
+            if (tetaX > 0.0)  rotateX(&shape->vtxs[k], tetaX);
+            if (tetaY > 0.0)  rotateY(&shape->vtxs[k], tetaY);
+            if (tetaZ > 0.0)  rotateY(&shape->vtxs[k], tetaZ);
     }
 }
 
@@ -233,15 +236,14 @@ int main(){
     printf("\nINFORMAÇÕES:\nWIDTH: %dpx\nHEIGHT: %dpx\nBITS_PER_PIXEL: %dbits\n\n", finfo.xres, finfo.yres, finfo.bits_per_pixel);
     int fb_width = finfo.xres;
     int fb_height = finfo.yres;
-    int fb_bpp = finfo.bits_per_pixel;
-    int fb_bytes = fb_bpp / 8;
+    // int fb_bpp = finfo.bits_per_pixel;
+    // int fb_bytes = fb_bpp / 8;
 
     
     int *buffer = malloc(sizeof(int)*fb_height*fb_width);
     Shape cube = initCube(400);
-    drawLines(&cube, 4);
+    drawLines(&cube, 100);
 
-    int n = 0;
     while (1){
         //draw new frame
         draw_buffer(buffer, &cube, fb_width, fb_height, WHITE);
@@ -254,6 +256,6 @@ int main(){
         write(fp, buffer, 1920*1080*4);
 
         //rodando
-        shapeRotate(&cube, 0.005, 0.005, 0.005);
+        shapeRotate(&cube, 0.00, 0.00, 0.005);
     }
 }
