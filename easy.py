@@ -40,7 +40,7 @@ class Forma(ABC):
 
     def drawLines(self, resolution:int = 100):
         for edge in self.conn:
-            self.linePoints.extend(drawLine(self.vtxs[edge[0]], self.vtxs[edge[1]]))
+            self.linePoints.extend(drawLine(self.vtxs[edge[0]], self.vtxs[edge[1]], resolution))
 
     def rotateX(self, teta: float):
         for ponto in self.vtxs:

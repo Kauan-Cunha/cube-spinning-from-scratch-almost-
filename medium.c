@@ -14,18 +14,42 @@
 #define BLACK 0
 #define WHITE 0xFFFFFFFF
 
+#define RADIUS 2
+
+typedef struct conn{
+    int s, d;
+}Conn;
 
 typedef struct coord{
     float x, y, z;
 }Coord;
 
-typedef struct point
-{
+typedef struct point{
     Coord coord;
     int n;
     Coord *r_points; //points of the radiuns (Manhattan Distance)
 
 }Point;
+
+typedef struct shape{
+    Point vtxs[8256];
+    int nPoints;
+    Conn conn[8128];
+    int nConn;
+}Shape;
+
+Shape initShape(){
+    Shape newShape;
+    newShape.nPoints = 0;
+    return newShape;
+}
+
+
+void addConn(Shape* shape, int src, int dest){
+    shape->conn[shape->nConn].s = src;
+    shape->conn[shape->nConn].d = dest;
+    shape->nConn += 1;
+}
 
 Coord init_coord(float x, float y, float z){
     Coord new;
@@ -42,9 +66,9 @@ Point init_point(float x, float y, float z, int radius){
         printf("Erro de alocação.\n");
         exit(EXIT_FAILURE);
     }
-
+    
     point->coord = init_coord(x, y, z);
-
+    
     int k = 0;
     for(int i = x - radius; i < x + radius; i++){
         for(int j = y - radius; j < y + radius; j++){
@@ -56,19 +80,22 @@ Point init_point(float x, float y, float z, int radius){
     return *point;
 }
 
-void draw_buffer(int *buff, Point *points, int n, int width, int height, int rgb){
-    for(int i = 0; i<n; i++){
+void addPoint(Shape* shape, float x, float y, float z, int radius){
+    shape->vtxs[shape->nPoints] = init_point(x, y, z, radius);
+    shape->nPoints += 1;
+}
+
+void draw_buffer(int *buff, Shape *shape, int width, int height, int rgb){
+    Point *points = shape->vtxs;
+    for(int i = 0; i<shape->nPoints; i++){
         for(int j = 0; j < points[i].n; j++){
             int x = (int)points[i].r_points[j].x + (int)width / 2;
             int y = (int)points[i].r_points[j].y + (int)height / 2;
             int offset = y * width + x;
             buff[offset] = rgb;
-            // lseek(fd, offset, SEEK_SET);
-            // write(fd, rgb, 4);
         }
     }
 }
-
 
 int abrir(char* filepath){
     int fp = open(filepath, O_RDWR | O_TRUNC);
@@ -142,6 +169,59 @@ void rotateZ(Point *point, float teta){
     point->coord.y = ((point->coord.x*sin(teta) - point->coord.y*cos(teta)));
 }
 
+/*
+INIT SOME OF THE SHAPES
+*/
+Shape initCube(float sideSize){
+    float half = sideSize/2;
+    Shape cube = initShape();
+    addPoint(&cube, -half, -half, -half, RADIUS);
+    addPoint(&cube, half, -half, -half, RADIUS);
+    addPoint(&cube, half, half, -half, RADIUS);
+    addPoint(&cube, -half, half, -half, RADIUS);
+    addPoint(&cube, -half, -half, half, RADIUS);
+    addPoint(&cube, half, -half, half, RADIUS);
+    addPoint(&cube, half, half, half, RADIUS);
+    addPoint(&cube, -half, half, half, RADIUS);
+
+    addConn(&cube, 0, 1);
+    addConn(&cube, 1, 2);
+    addConn(&cube, 2, 3);
+    addConn(&cube, 3, 0);
+    addConn(&cube, 4, 5);
+    addConn(&cube, 5, 6);
+    addConn(&cube, 6, 7);
+    addConn(&cube, 7, 4);
+    addConn(&cube, 0, 4);
+    addConn(&cube, 1, 5);
+    addConn(&cube, 2, 6);
+    addConn(&cube, 3, 7);
+
+    return cube;
+}
+
+Shape drawLines(Shape *shape, int resolution){
+    for(int i = 0; i < shape->nConn; i++){
+        float t = 0;
+        float step = 1/resolution;
+        Point a = shape->vtxs[shape->conn[i].s];
+        Point b = shape->vtxs[shape->conn[i].d];
+
+        while (t < 1){
+            addPoint(shape, a.coord.x + t*(b.coord.x - a.coord.x), a.coord.y + t*(b.coord.y - a.coord.y), a.coord.z + t*(b.coord.z - a.coord.z),RADIUS);
+        }
+
+    }
+}
+          
+void shapeRotate(Shape* shape, float tetaX, float tetaY, float tetaZ){
+    for(int k = 0; k < shape->nPoints; k++){
+            rotateX(&shape->vtxs[k], tetaX);
+            rotateY(&shape->vtxs[k], tetaY);
+            rotateY(&shape->vtxs[k], tetaZ);
+    }
+}
+
 int main(){
     int fp = abrir("/dev/fb0");
 
@@ -156,35 +236,24 @@ int main(){
     int fb_bpp = finfo.bits_per_pixel;
     int fb_bytes = fb_bpp / 8;
 
-    Point points[8];
-    points[0] = init_point(-200, 0, -200,RADIUS);
-    points[1] = init_point(0, -200, -200,RADIUS);
-    points[2] = init_point(200, 0, -200,RADIUS);
-    points[3] = init_point(0, 200, -200,RADIUS);
-    points[4] = init_point(-200, 0, 200,RADIUS);
-    points[5] = init_point(0, -200, 200,RADIUS);
-    points[6] = init_point(200, 0, 200,RADIUS);
-    points[7] = init_point(0, 200, 200,RADIUS);
-
-    int buffer[1920*1080];
-    // int clean_buffer[1920*1080];
     
+    int *buffer = malloc(sizeof(int)*fb_height*fb_width);
+    Shape cube = initCube(400);
+    drawLines(&cube, 4);
+
     int n = 0;
     while (1){
         //draw new frame
-        draw_buffer(buffer, points, 8, 1920, 1080, WHITE);
+        draw_buffer(buffer, &cube, fb_width, fb_height, WHITE);
         lseek(fp, 0, SEEK_SET);
         write(fp, buffer, 1920*1080*4);
         usleep(10000);
         //cleanscreen
-        draw_buffer(buffer, points, 8, 1920, 1080,  BLACK);
+        draw_buffer(buffer, &cube, fb_width, fb_height,  BLACK);
         lseek(fp, 0, SEEK_SET);
         write(fp, buffer, 1920*1080*4);
-        for(int k = 0; k < 8; k++){
-            // printf("entrou");
-            rotateX(&points[k], 0.005);
-            rotateY(&points[k], 0.005);
-            rotateY(&points[k], 0.005);
-        }
+
+        //rodando
+        shapeRotate(&cube, 0.005, 0.005, 0.005);
     }
 }
